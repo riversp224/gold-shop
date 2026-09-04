@@ -482,8 +482,8 @@
   </div>
 
   <script>
-    // 🔗 Google Apps Script 網頁應用程式網址
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw7bd8DaOqoXz71wL7MVUie19gR_aWxBLJyDCn59yZsKNGi1sgN0ydNC6TCRBfUb5Hf/exec";
+    // 🔗 Google Apps Script 網頁應用程式網址 (已更新為最新版)
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzsxEfczDe9FA9g5PqkXNmzjF0DbJm5bu8MPlJz7cgaXk7LZG7kSJhT4ItJOWD83p8E/exec";
 
     // 🔐 密碼驗證邏輯 (預設密碼: 8888)
     const CORRECT_PASSWORD = "8888";
@@ -613,7 +613,6 @@
       };
 
       try {
-        // 使用 no-cors 或標準 POST（取決於 Apps Script 部署方式，通常用 text/plain 避免 CORS 預檢限制）
         await fetch(APPS_SCRIPT_URL, {
           method: 'POST',
           mode: 'no-cors', 
@@ -633,7 +632,6 @@
       localStorage.setItem('gs_purchases', JSON.stringify(purchases));
     }
 
-    // 整合儲存（同時存本地並上傳雲端）
     function persistData() {
       saveLocal();
       saveToCloud();
@@ -647,7 +645,6 @@
       setInterval(updateCountdown, 60000);
       lucide.createIcons();
       
-      // 啟動時自動從雲端同步
       fetchFromCloud();
     }
     // =======================================================
