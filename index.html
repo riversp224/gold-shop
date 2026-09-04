@@ -9,18 +9,17 @@
     body { background-color: #5c2c16; color: #fff; margin: 0; padding: 20px; }
     .container { max-width: 900px; margin: 0 auto; }
     h1 { color: #fce38a; margin-bottom: 5px; }
-    .status-bar { font-size: 14px; margin-bottom: 20px; color: #e2b07a; }
+    .status-bar { font-size: 14px; margin-bottom: 20px; color: #e2b07a; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 6px; }
     
     .card { background-color: #72381b; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
     .form-group { margin-bottom: 15px; }
     label { display: block; margin-bottom: 5px; font-weight: bold; color: #fce38a; }
     input, select, textarea { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #a45a2a; background-color: #431f0e; color: #fff; }
     
-    .btn-group { display: flex; gap: 10px; }
-    button { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    button { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
     .btn-primary { background-color: #e2b07a; color: #431f0e; }
     .btn-primary:hover { background-color: #fce38a; }
-    .btn-secondary { background-color: #a45a2a; color: #fff; }
+    .btn-primary:disabled { background-color: #777; cursor: not-allowed; }
     
     .list-title { color: #fce38a; border-bottom: 1px solid #a45a2a; padding-bottom: 8px; margin-top: 0; }
     .item-card { background: #431f0e; padding: 12px; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
@@ -31,7 +30,7 @@
 
 <div class="container">
   <h1>GOLD SHOP OPENING PREPARATION</h1>
-  <div id="statusText" class="status-bar">🟡 系統讀取中...</div>
+  <div id="statusText" class="status-bar">🟡 系統初始化中...</div>
 
   <!-- 新增項目表單 -->
   <div class="card">
@@ -52,12 +51,12 @@
 
       <div class="form-group">
         <label for="itemName">項目名稱 / 內容</label>
-        <input type="text" id="itemName" placeholder="例如：開工前審批及文件 或 展示櫃燈條" required>
+        <input type="text" id="itemName" placeholder="例如：現場施工防護 或 展示櫃燈條" required>
       </div>
 
       <div class="form-group">
         <label for="itemStatus">狀態 / 備註</label>
-        <input type="text" id="itemStatus" placeholder="例如：進行中 / 已完成 / 預算 $5000">
+        <input type="text" id="itemStatus" placeholder="例如：未完成 / 已完成 / 預算 $5000">
       </div>
 
       <button type="submit" id="submitBtn" class="btn-primary">同步寫入 Google Sheet</button>
@@ -66,9 +65,9 @@
 
   <!-- 本地/雲端 檢視列表 -->
   <div class="card">
-    <h3 class="list-title">📋 內容快速檢視 (當前頁面資料)</h3>
+    <h3 class="list-title">📋 本次新增項目紀錄</h3>
     <div id="itemList">
-      <p style="color: #ccc;">尚無資料，請點擊上方按鈕寫入或更新。</p>
+      <p style="color: #ccc;">尚無資料，請點擊上方按鈕寫入。</p>
     </div>
   </div>
 </div>
@@ -77,8 +76,9 @@
   // 最新部署的 Google Apps Script Web App URL
   const GAS_URL = "https://script.google.com/macros/s/AKfycbzsxEfczDe9FA9g5PqkXNmzjF0DbJm5bu8MPlJz7cgaXk7LZG7kSJhT4ItJOWD83p8E/exec";
 
-  // 預設填入今天日期 (YYYY-MM-DD)
+  // 初始化預設填入今天日期 (YYYY-MM-DD)
   document.getElementById("itemDate").value = new Date().toISOString().split('T')[0];
+  document.getElementById("statusText").innerText = "🟢 系統已準備就緒";
 
   // 處理表單提交 (POST)
   document.getElementById("dataForm").addEventListener("submit", function(e) {
@@ -92,7 +92,7 @@
     const name = document.getElementById("itemName").value;
     const status = document.getElementById("itemStatus").value;
 
-    // 將資料打包為橫向陣列 [A欄, B欄, C欄]
+    // 將資料打包
     const payload = {
       type: sheetType === "工程任務" ? "task" : "purchase",
       sheet: sheetType,
@@ -103,12 +103,20 @@
     submitBtn.innerText = "同步中...";
     statusText.innerText = "🟡 正在發送資料至 Google 試算表...";
 
-    // POST 請求：注意不可以加 'Content-Type': 'application/json' 以避免 CORS 阻擋
+    // POST 請求：加上 mode: 'cors' 與 redirect: 'follow'
+    // 注意：絕對不能包含 headers: { 'Content-Type': 'application/json' }
     fetch(GAS_URL, {
       method: "POST",
+      mode: "cors",
+      redirect: "follow",
       body: JSON.stringify(payload)
     })
-    .then(res => res.json())
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("HTTP error " + response.status);
+      }
+      return response.json();
+    })
     .then(data => {
       if (data.status === "success") {
         statusText.innerText = "🟢 成功寫入至 Google 試算表（工作表：" + sheetType + "）";
@@ -124,8 +132,8 @@
       }
     })
     .catch(err => {
-      console.error(err);
-        statusText.innerText = "🔴 雲端連線失敗，請檢查網路或 Apps Script 權限。";
+      console.error("連線錯誤細節：", err);
+      statusText.innerText = "🔴 雲端連線失敗，請檢查網路或 Apps Script 權限設定。";
     })
     .finally(() => {
       submitBtn.disabled = false;
@@ -137,7 +145,6 @@
   function renderItem(date, sheet, name, status) {
     const itemList = document.getElementById("itemList");
     
-    // 如果是第一筆，先清空預設文字
     if (itemList.querySelector("p")) {
       itemList.innerHTML = "";
     }
