@@ -198,7 +198,19 @@
        </button>
       </div>
 
-      <!-- 獨立入口: 採購清單 -->
+      <!-- 獨立入口 1: 注意事項與高風險黑點 -->
+      <div class="sidebar-card p-5 rounded-2xl shadow-lg border border-red-300/60 flex items-center justify-between">
+       <div class="flex items-center gap-3">
+        <div class="p-3 bg-red-600/20 text-red-900 rounded-xl"><i data-lucide="alert-triangle" class="w-6 h-6"></i></div>
+        <div>
+         <h4 class="font-bold text-slate-800 text-sm">注意事項及黑點</h4>
+         <p class="text-xs text-slate-600 mt-0.5">拆圍板條件 / 退舖還原 / 6大風險</p>
+        </div>
+       </div>
+       <button onclick="openNoticeModal()" class="px-4 py-2 rounded-xl bg-red-800 text-white text-xs font-bold hover:bg-red-900 transition-colors shadow">管理手冊</button>
+      </div>
+
+      <!-- 獨立入口 2: 採購清單 -->
       <div class="sidebar-card p-5 rounded-2xl shadow-lg border border-amber-200/50 flex items-center justify-between">
        <div class="flex items-center gap-3">
         <div class="p-3 bg-amber-600/20 text-amber-900 rounded-xl"><i data-lucide="shopping-bag" class="w-6 h-6"></i></div>
@@ -213,22 +225,9 @@
 
      <!-- Right Dashboard Area -->
      <main class="lg:col-span-8">
-      <div class="main-card p-6 md:p-8 rounded-2xl shadow-xl min-h-[500px] space-y-6">
-       
-       <!-- 注意事項與高風險黑點 (已移至日期進度監視上方，並完美匹配組件寬度) -->
-       <div class="bg-white/80 p-4 rounded-xl shadow-sm border border-red-300/60 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-         <div class="p-2.5 bg-red-600/20 text-red-900 rounded-xl"><i data-lucide="alert-triangle" class="w-5 h-5"></i></div>
-         <div>
-          <h4 class="font-bold text-slate-800 text-sm">注意事項及黑點</h4>
-          <p class="text-xs text-slate-600 mt-0.5">拆圍板條件 / 退舖還原 / 6大風險</p>
-         </div>
-        </div>
-        <button onclick="openNoticeModal()" class="px-4 py-2 rounded-xl bg-red-800 text-white text-xs font-bold hover:bg-red-900 transition-colors shadow">管理手冊</button>
-       </div>
-
+      <div class="main-card p-6 md:p-8 rounded-2xl shadow-xl min-h-[500px]">
        <!-- Header Status -->
-       <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-300/60 gap-2">
+       <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-6 border-b border-slate-300/60 gap-2">
         <div>
          <span class="text-xs uppercase tracking-wider text-slate-600 font-bold">選定日期進度檢視</span>
          <h3 id="selectedDateDisplay" class="text-2xl font-extrabold text-slate-900">2026-09-01</h3>
@@ -386,7 +385,7 @@
      </div>
      <div class="flex items-center gap-2">
       <button onclick="exportProcurementToExcel()" class="px-3.5 py-2 bg-emerald-700 text-white rounded-xl text-xs font-bold hover:bg-emerald-800 transition-colors shadow flex items-center gap-1.5">
-        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> 一鍵下載 Excel[cite: 1]
+        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> 一鍵下載 Excel
       </button>
       <button onclick="closeProcurementModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-6 h-6"></i></button>
      </div>
@@ -478,6 +477,9 @@
     // 🔐 密碼驗證邏輯 (預設密碼: 8888)
     const CORRECT_PASSWORD = "8888";
 
+    // 🌐 Google Apps Script 網頁應用程式網址 (API 橋樑)
+    const API_URL = "https://script.google.com/macros/s/AKfycbw7bd8DaOqoXz71wL7MVUie19gR_aWxBLJyDCn59yZsKNGi1sgN0ydNC6TCRBfUb5Hf/exec";
+
     function handleLogin(e) {
       e.preventDefault();
       const val = document.getElementById('passwordInput').value;
@@ -508,30 +510,11 @@
     let currentCategory = 'Morning';
     let pFilter = 'All';
 
-    let targetOpeningDate = localStorage.getItem('gs_target_date');
-    if (!targetOpeningDate) {
-      targetOpeningDate = '2026-10-15';
-      localStorage.setItem('gs_target_date', targetOpeningDate);
-    }
+    let targetOpeningDate = localStorage.getItem('gs_target_date') || '2026-10-15';
 
-    let tasks = JSON.parse(localStorage.getItem('gs_tasks_lp_v2') || '[]');
-    if (tasks.length === 0) {
-      tasks = [
-        { id: '1', name: '$350 臨時電接駁費用（要用支票形式寄去管理處）', category: 'Morning', startDate: '2026-09-01', endDate: '2026-09-05', completed: false },
-        { id: '2', name: '$15000 裝修deposit（用支票形式寄去管理處）', category: 'Morning', startDate: '2026-09-01', endDate: '2026-09-05', completed: false },
-        { id: '3', name: '交埋保險policy，可以即刻開工', category: 'Morning', startDate: '2026-09-01', endDate: '2026-09-05', completed: false },
-        { id: '4', name: '9月2號當日，師傅出3D圖&平面圖（3D圖收到後即刻send俾業主批，平面圖比冷氣承辦安裝冷氣）', category: 'Morning', startDate: '2026-09-01', endDate: '2026-09-05', completed: false },
-        { id: '5', name: '圍板貼紙列印中（管理處話開工就可以整圍板加貼貼紙）', category: 'Morning', startDate: '2026-09-01', endDate: '2026-09-05', completed: false },
-        { id: '6', name: '整圍板', category: 'Noon', startDate: '2026-09-07', endDate: '2026-10-15', completed: false },
-        { id: '7', name: '鋪地板', category: 'Noon', startDate: '2026-09-07', endDate: '2026-10-15', completed: false },
-        { id: '8', name: '拉線', category: 'Noon', startDate: '2026-09-07', endDate: '2026-10-15', completed: false },
-        { id: '9', name: '安裝冷氣（冷氣承辦商）', category: 'Noon', startDate: '2026-09-07', endDate: '2026-10-15', completed: false },
-        { id: '10', name: '安裝天花（如有）', category: 'Noon', startDate: '2026-09-07', endDate: '2026-10-15', completed: false },
-        { id: '11', name: '改出路燈、貓燈、（消防灑水）（消防承辦商）', category: 'Noon', startDate: '2026-09-07', endDate: '2026-10-15', completed: false },
-        { id: '12', name: '其他', category: 'Noon', startDate: '2026-09-07', endDate: '2026-10-15', completed: false }
-      ];
-      saveTasks();
-    }
+    let tasks = [];
+    let notices = [];
+    let purchases = [];
 
     const defaultNotices = [
       { id: 'n1', category: 'demolition', text: '現場施工與審批圖則完全一致；如有差異須於 1 個月內完成修改。' },
@@ -549,17 +532,72 @@
       { id: 'n13', category: 'risk', text: '未交齊相關證書（FS251/WR1）即擅自拆除圍板開業。' }
     ];
 
-    let notices = JSON.parse(localStorage.getItem('gs_notices_lp') || 'null');
-    if (!notices) {
-      notices = [...defaultNotices];
-      saveNotices();
+    const defaultTasks = [
+      { id: '1', name: '$350 臨時電接駁費用（要用支票形式寄去管理處）', category: 'Morning', startDate: '2026-09-01', endDate: '2026-09-05', completed: false },
+      { id: '2', name: '$15000 裝修deposit（用支票形式寄去管理處）', category: 'Morning', startDate: '2026-09-01', endDate: '2026-09-05', completed: false },
+      { id: '3', name: '交埋保險policy，可以即刻開工', category: 'Morning', startDate: '2026-09-01', endDate: '2026-09-05', completed: false },
+      { id: '4', name: '9月2號當日，師傅出3D圖&平面圖（3D圖收到後即刻send俾業主批，平面圖比冷氣承辦安裝冷氣）', category: 'Morning', startDate: '2026-09-01', endDate: '2026-09-05', completed: false },
+      { id: '5', name: '圍板貼紙列印中（管理處話開工就可以整圍板加貼貼紙）', category: 'Morning', startDate: '2026-09-01', endDate: '2026-09-05', completed: false },
+      { id: '6', name: '整圍板', category: 'Noon', startDate: '2026-09-07', endDate: '2026-10-15', completed: false },
+      { id: '7', name: '鋪地板', category: 'Noon', startDate: '2026-09-07', endDate: '2026-10-15', completed: false },
+      { id: '8', name: '拉線', category: 'Noon', startDate: '2026-09-07', endDate: '2026-10-15', completed: false },
+      { id: '9', name: '安裝冷氣（冷氣承辦商）', category: 'Noon', startDate: '2026-09-07', endDate: '2026-10-15', completed: false },
+      { id: '10', name: '安裝天花（如有）', category: 'Noon', startDate: '2026-09-07', endDate: '2026-10-15', completed: false },
+      { id: '11', name: '改出路燈、貓燈、（消防灑水）（消防承辦商）', category: 'Noon', startDate: '2026-09-07', endDate: '2026-10-15', completed: false },
+      { id: '12', name: '其他', category: 'Noon', startDate: '2026-09-07', endDate: '2026-10-15', completed: false }
+    ];
+
+    // 📥 從 Google 試算表載入資料
+    async function loadDataFromSheet() {
+      try {
+        const response = await fetch(API_URL);
+        const result = await response.json();
+        
+        if (result && result.status === 'success') {
+          tasks = result.tasks && result.tasks.length > 0 ? result.tasks : defaultTasks;
+          notices = result.notices && result.notices.length > 0 ? result.notices : defaultNotices;
+          purchases = result.purchases || [];
+          if(result.targetDate) {
+            targetOpeningDate = result.targetDate;
+          }
+        } else {
+          loadFallbackLocal();
+        }
+      } catch (err) {
+        console.warn('無法連線至 Google 試算表，改用本機快取數據:', err);
+        loadFallbackLocal();
+      }
+      initApp();
     }
 
-    let purchases = JSON.parse(localStorage.getItem('gs_purchases') || '[]');
+    function loadFallbackLocal() {
+      tasks = JSON.parse(localStorage.getItem('gs_tasks_lp_v2') || JSON.stringify(defaultTasks));
+      notices = JSON.parse(localStorage.getItem('gs_notices_lp') || JSON.stringify(defaultNotices));
+      purchases = JSON.parse(localStorage.getItem('gs_purchases') || '[]');
+    }
 
-    function saveTasks() { localStorage.setItem('gs_tasks_lp_v2', JSON.stringify(tasks)); }
-    function saveNotices() { localStorage.setItem('gs_notices_lp', JSON.stringify(notices)); }
-    function savePurchases() { localStorage.setItem('gs_purchases', JSON.stringify(purchases)); }
+    // 📤 將最新資料同步回寫至 Google 試算表 (背景執行)
+    function saveDataToSheet() {
+      // 同時備份至 localStorage
+      localStorage.setItem('gs_tasks_lp_v2', JSON.stringify(tasks));
+      localStorage.setItem('gs_notices_lp', JSON.stringify(notices));
+      localStorage.setItem('gs_purchases', JSON.stringify(purchases));
+      localStorage.setItem('gs_target_date', targetOpeningDate);
+
+      const payload = {
+        tasks: tasks,
+        notices: notices,
+        purchases: purchases,
+        targetDate: targetOpeningDate
+      };
+
+      fetch(API_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).catch(err => console.error('同步至試算表失敗:', err));
+    }
 
     function initApp() {
       renderCalendar();
@@ -589,7 +627,7 @@
         tasks[idx] = tasks[swapWithIdx];
         tasks[swapWithIdx] = temp;
 
-        saveTasks();
+        saveDataToSheet();
         renderTasks();
       }
     }
@@ -691,7 +729,7 @@
             checkbox.checked = task.completed;
             checkbox.onchange = () => {
               task.completed = checkbox.checked;
-              saveTasks();
+              saveDataToSheet();
               renderTasks();
             };
 
@@ -740,7 +778,7 @@
               e.stopPropagation();
               showDeleteConfirm(`確認刪除「${task.name}」？`, () => {
                 tasks = tasks.filter(t => t.id !== task.id);
-                saveTasks();
+                saveDataToSheet();
                 renderTasks();
               });
             };
@@ -814,7 +852,7 @@
         tasks.push({ id: Date.now().toString(), name, category: currentCategory, startDate, endDate, completed: false });
       }
 
-      saveTasks();
+      saveDataToSheet();
       closeModal();
       renderTasks();
     }
@@ -858,7 +896,7 @@
           delBtn.onclick = () => {
             showDeleteConfirm('確認刪除此注意事項條款？', () => {
               notices = notices.filter(n => n.id !== item.id);
-              saveNotices();
+              saveDataToSheet();
               renderNotices();
             });
           };
@@ -881,7 +919,7 @@
       if (!text) return;
       notices.push({ id: 'n_' + Date.now(), category: cat, text: text });
 
-      saveNotices();
+      saveDataToSheet();
       document.getElementById('noticeTextInput').value = '';
       renderNotices();
     }
@@ -893,7 +931,7 @@
       const newText = prompt('請修改注意事項內容：', item.text);
       if (newText !== null && newText.trim() !== '') {
         item.text = newText.trim();
-        saveNotices();
+        saveDataToSheet();
         renderNotices();
       }
     }
@@ -901,7 +939,7 @@
     function resetNoticeDefaults() {
       showDeleteConfirm('確認將所有注意事項回復為預設範本？', () => {
         notices = [...defaultNotices];
-        saveNotices();
+        saveDataToSheet();
         renderNotices();
       });
     }
@@ -932,7 +970,7 @@
       const val = document.getElementById('targetDateInput').value;
       if (val) {
         targetOpeningDate = val;
-        localStorage.setItem('gs_target_date', targetOpeningDate);
+        saveDataToSheet();
         updateCountdown();
       }
       closeCountdownModal();
@@ -1111,7 +1149,7 @@
         });
       }
 
-      savePurchases();
+      saveDataToSheet();
       resetPurchaseForm();
       renderProcurementTable();
     }
@@ -1120,7 +1158,7 @@
       const item = purchases.find(p => p.id === id);
       showDeleteConfirm(`確認刪除採購項目「${item ? item.name : ''}」？`, () => {
         purchases = purchases.filter(p => p.id !== id);
-        savePurchases();
+        saveDataToSheet();
         renderProcurementTable();
       });
     }
