@@ -376,18 +376,20 @@
   <!-- Modal 4: Procurement List -->
   <div id="procurementModal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl p-6 md:p-8 max-h-[90vh] flex flex-col relative">
-    <div class="flex justify-between items-center pb-4 border-b border-slate-200">
+    
+    <!-- 頂部標題與按鈕區塊 (已調整版面確保按鈕不會被擠壓) -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 gap-3">
      <div>
       <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
        <i data-lucide="shopping-cart" class="w-6 h-6 text-amber-700"></i> 店舖採購清單 (Procurement List)
       </h2>
       <p class="text-xs text-slate-500 mt-1">統一管理店舖所有採購開支，即時統計總金額</p>
      </div>
-     <div class="flex items-center gap-2">
-      <button onclick="exportProcurementToExcel()" class="px-3.5 py-2 bg-emerald-700 text-white rounded-xl text-xs font-bold hover:bg-emerald-800 transition-colors shadow flex items-center gap-1.5">
+     <div class="flex items-center gap-2 self-end sm:self-auto">
+      <button onclick="exportProcurementToExcel()" class="px-4 py-2.5 bg-emerald-700 text-white rounded-xl text-xs font-bold hover:bg-emerald-800 transition-colors shadow flex items-center gap-1.5">
         <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> 一鍵下載 Excel
       </button>
-      <button onclick="closeProcurementModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-6 h-6"></i></button>
+      <button onclick="closeProcurementModal()" class="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"><i data-lucide="x" class="w-6 h-6"></i></button>
      </div>
     </div>
 
@@ -474,7 +476,6 @@
   </div>
 
   <script>
-    // 🔐 密碼驗證邏輯 (預設密碼: 8888)
     const CORRECT_PASSWORD = "8888";
 
     function handleLogin(e) {
@@ -490,7 +491,6 @@
       }
     }
 
-    // 頁面載入時檢查是否已經解鎖過
     window.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
       if (sessionStorage.getItem('gs_authenticated') === 'true') {
