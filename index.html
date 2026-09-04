@@ -393,7 +393,7 @@
      </div>
      <div class="flex items-center gap-2">
       <button onclick="exportProcurementToExcel()" class="px-3.5 py-2 bg-emerald-700 text-white rounded-xl text-xs font-bold hover:bg-emerald-800 transition-colors shadow flex items-center gap-1.5">
-        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> 一鍵下載 Excel[cite: 1]
+        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> 一鍵下載 Excel
       </button>
       <button onclick="closeProcurementModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-6 h-6"></i></button>
      </div>
@@ -403,7 +403,7 @@
     <div class="mt-4 bg-amber-50 p-4 rounded-xl border border-amber-200 flex justify-between items-center mb-3">
      <div>
       <span id="currentFilterLabel" class="text-xs text-amber-800 font-bold block mb-0.5">全部總計 (HKD)</span> 
-      <span id="totalExpenseDisplay" class="text-3xl font-extrabold text-amber-900">HK$ 0</span>
+      <span id="totalExpenseDisplay" class="text-3xl font-extrabold text-amber-900">HK$ 0.00</span>
      </div>
     </div>
 
@@ -438,7 +438,8 @@
      </div>
      <div class="sm:col-span-2">
       <label class="block text-[11px] font-bold text-slate-700 mb-1">單價 (HKD)</label> 
-      <input type="number" min="0" step="0.1" id="pPrice" required class="w-full px-3 py-1.5 border rounded-lg text-xs" placeholder="0.00">
+      <!-- 🛠️ 已更新為 step="0.01" 允許保留兩位小數 -->
+      <input type="number" min="0" step="0.01" id="pPrice" required class="w-full px-3 py-1.5 border rounded-lg text-xs" placeholder="0.00">
      </div>
      <div class="sm:col-span-1">
       <label class="block text-[11px] font-bold text-slate-700 mb-1">數量</label> 
@@ -487,6 +488,14 @@
 
     // 🔐 密碼驗證邏輯 (預設密碼: 8888)
     const CORRECT_PASSWORD = "8888";
+
+    // 金額格式化輔助函數（統一格式化為千分位 + 兩位小數）
+    function formatCurrency(val) {
+      return Number(val || 0).toLocaleString('zh-HK', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
 
     function handleLogin(e) {
       e.preventDefault();
@@ -1042,7 +1051,7 @@
       let catTotals = { '裝修費用': 0, '電器': 0, '文具': 0, '雜物': 0, '雜費': 0, '其他': 0 };
 
       purchases.forEach(item => {
-        const itemTotal = item.price * item.qty;
+        const itemTotal = (parseFloat(item.price) || 0) * (parseInt(item.qty) || 1);
         grandTotal += itemTotal;
         
         if (catTotals[item.category] !== undefined) {
@@ -1052,7 +1061,7 @@
         }
       });
 
-      document.getElementById('totalPurchaseBrief').innerText = `已登錄 ${purchases.length} 項採購，總計 HK$ ${grandTotal.toLocaleString()}`;
+      document.getElementById('totalPurchaseBrief').innerText = `已登錄 ${purchases.length} 項採購，總計 HK$ ${formatCurrency(grandTotal)}`;
 
       const categories = ['All', '裝修費用', '電器', '文具', '雜物', '雜費', '其他'];
       categories.forEach(c => {
@@ -1060,12 +1069,12 @@
         if(!btn) return;
         
         const amt = c === 'All' ? grandTotal : (catTotals[c] || 0);
-        btn.innerText = `${c === 'All' ? '全部' : c} ($${amt.toLocaleString()})`;
+        btn.innerText = `${c === 'All' ? '全部' : c} ($${formatCurrency(amt)})`;
 
         if(pFilter === c) {
           btn.className = "whitespace-nowrap px-4 py-2 rounded-xl border-2 border-amber-800 bg-amber-800 text-white text-xs font-bold shadow-sm transition-all";
           document.getElementById('currentFilterLabel').innerText = `${c === 'All' ? '全部' : c}總計 (HKD)`;
-          document.getElementById('totalExpenseDisplay').innerText = `HK$ ${amt.toLocaleString()}`;
+          document.getElementById('totalExpenseDisplay').innerText = `HK$ ${formatCurrency(amt)}`;
         } else {
           btn.className = "whitespace-nowrap px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-bold hover:bg-slate-50 transition-all";
         }
@@ -1074,15 +1083,18 @@
       const displayItems = pFilter === 'All' ? purchases : purchases.filter(p => p.category === pFilter);
 
       displayItems.forEach(item => {
-        const itemTotal = item.price * item.qty;
+        const priceNum = parseFloat(item.price) || 0;
+        const qtyNum = parseInt(item.qty) || 1;
+        const itemTotal = priceNum * qtyNum;
+
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 border-b border-slate-100 transition-colors';
         tr.innerHTML = `
           <td class="p-3 font-semibold text-slate-700">${item.category}</td>
           <td class="p-3 font-medium text-slate-900">${item.name}</td>
-          <td class="p-3 text-right text-slate-600">$${Number(item.price).toLocaleString()}</td>
-          <td class="p-3 text-center text-slate-600">${item.qty}</td>
-          <td class="p-3 text-right font-bold text-amber-900">$${itemTotal.toLocaleString()}</td>
+          <td class="p-3 text-right text-slate-600">$${formatCurrency(priceNum)}</td>
+          <td class="p-3 text-center text-slate-600">${qtyNum}</td>
+          <td class="p-3 text-right font-bold text-amber-900">$${formatCurrency(itemTotal)}</td>
           <td class="p-3 text-slate-500 max-w-[150px] truncate" title="${item.note || ''}">${item.note || '-'}</td>
           <td class="p-3 text-center">
             <div class="inline-flex items-center justify-center gap-1">
@@ -1110,12 +1122,14 @@
       let csvContent = "\ufeff類別,物品名稱,單價(HKD),數量,總價(HKD),說明/備註\n";
 
       purchases.forEach(item => {
-        const total = item.price * item.qty;
+        const priceNum = parseFloat(item.price) || 0;
+        const qtyNum = parseInt(item.qty) || 1;
+        const total = priceNum * qtyNum;
         const name = `"${(item.name || '').replace(/"/g, '""')}"`;
         const category = `"${(item.category || '').replace(/"/g, '""')}"`;
         const note = `"${(item.note || '').replace(/"/g, '""')}"`;
 
-        csvContent += `${category},${name},${item.price},${item.qty},${total},${note}\n`;
+        csvContent += `${category},${name},${priceNum.toFixed(2)},${qtyNum},${total.toFixed(2)},${note}\n`;
       });
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -1138,7 +1152,7 @@
       document.getElementById('pEditId').value = item.id;
       document.getElementById('pName').value = item.name;
       document.getElementById('pCategory').value = item.category;
-      document.getElementById('pPrice').value = item.price;
+      document.getElementById('pPrice').value = parseFloat(item.price) || '';
       document.getElementById('pQty').value = item.qty;
       document.getElementById('pNote').value = item.note || '';
 
