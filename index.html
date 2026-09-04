@@ -149,7 +149,7 @@
       <div>
        <h1 class="gold-title text-3xl md:text-5xl font-extrabold text-[#fde047] drop-shadow-md tracking-wide">GOLD SHOP</h1>
        <h2 class="gold-title text-2xl md:text-4xl font-bold text-[#fef08a] tracking-wider mt-1">OPENING PREPARATION SYSTEM</h2>
-       <p class="serif-text text-amber-100 text-sm md:text-base mt-2 opacity-90 italic">Daily checks to keep opening preparations on track[cite: 2].</p>
+       <p class="serif-text text-amber-100 text-sm md:text-base mt-2 opacity-90 italic">Daily checks to keep opening preparations on track.</p>
       </div>
       
       <!-- Opening Countdown Banner -->
@@ -198,19 +198,7 @@
        </button>
       </div>
 
-      <!-- 獨立入口 1: 注意事項與高風險黑點 -->
-      <div class="sidebar-card p-5 rounded-2xl shadow-lg border border-red-300/60 flex items-center justify-between">
-       <div class="flex items-center gap-3">
-        <div class="p-3 bg-red-600/20 text-red-900 rounded-xl"><i data-lucide="alert-triangle" class="w-6 h-6"></i></div>
-        <div>
-         <h4 class="font-bold text-slate-800 text-sm">注意事項及黑點</h4>
-         <p class="text-xs text-slate-600 mt-0.5">拆圍板條件 / 退舖還原 / 6大風險</p>
-        </div>
-       </div>
-       <button onclick="openNoticeModal()" class="px-4 py-2 rounded-xl bg-red-800 text-white text-xs font-bold hover:bg-red-900 transition-colors shadow">管理手冊</button>
-      </div>
-
-      <!-- 獨立入口 2: 採購清單 -->
+      <!-- 獨立入口: 採購清單 -->
       <div class="sidebar-card p-5 rounded-2xl shadow-lg border border-amber-200/50 flex items-center justify-between">
        <div class="flex items-center gap-3">
         <div class="p-3 bg-amber-600/20 text-amber-900 rounded-xl"><i data-lucide="shopping-bag" class="w-6 h-6"></i></div>
@@ -225,9 +213,22 @@
 
      <!-- Right Dashboard Area -->
      <main class="lg:col-span-8">
-      <div class="main-card p-6 md:p-8 rounded-2xl shadow-xl min-h-[500px]">
+      <div class="main-card p-6 md:p-8 rounded-2xl shadow-xl min-h-[500px] space-y-6">
+       
+       <!-- 注意事項與高風險黑點 (已移至日期進度監視上方，並完美匹配組件寬度) -->
+       <div class="bg-white/80 p-4 rounded-xl shadow-sm border border-red-300/60 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+         <div class="p-2.5 bg-red-600/20 text-red-900 rounded-xl"><i data-lucide="alert-triangle" class="w-5 h-5"></i></div>
+         <div>
+          <h4 class="font-bold text-slate-800 text-sm">注意事項及黑點</h4>
+          <p class="text-xs text-slate-600 mt-0.5">拆圍板條件 / 退舖還原 / 6大風險</p>
+         </div>
+        </div>
+        <button onclick="openNoticeModal()" class="px-4 py-2 rounded-xl bg-red-800 text-white text-xs font-bold hover:bg-red-900 transition-colors shadow">管理手冊</button>
+       </div>
+
        <!-- Header Status -->
-       <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-6 border-b border-slate-300/60 gap-2">
+       <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-300/60 gap-2">
         <div>
          <span class="text-xs uppercase tracking-wider text-slate-600 font-bold">選定日期進度檢視</span>
          <h3 id="selectedDateDisplay" class="text-2xl font-extrabold text-slate-900">2026-09-01</h3>
@@ -376,20 +377,18 @@
   <!-- Modal 4: Procurement List -->
   <div id="procurementModal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl p-6 md:p-8 max-h-[90vh] flex flex-col relative">
-    
-    <!-- 頂部標題與按鈕區塊 (已調整版面確保按鈕不會被擠壓) -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 gap-3">
+    <div class="flex justify-between items-center pb-4 border-b border-slate-200">
      <div>
       <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
        <i data-lucide="shopping-cart" class="w-6 h-6 text-amber-700"></i> 店舖採購清單 (Procurement List)
       </h2>
       <p class="text-xs text-slate-500 mt-1">統一管理店舖所有採購開支，即時統計總金額</p>
      </div>
-     <div class="flex items-center gap-2 self-end sm:self-auto">
-      <button onclick="exportProcurementToExcel()" class="px-4 py-2.5 bg-emerald-700 text-white rounded-xl text-xs font-bold hover:bg-emerald-800 transition-colors shadow flex items-center gap-1.5">
-        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> 一鍵下載 Excel
+     <div class="flex items-center gap-2">
+      <button onclick="exportProcurementToExcel()" class="px-3.5 py-2 bg-emerald-700 text-white rounded-xl text-xs font-bold hover:bg-emerald-800 transition-colors shadow flex items-center gap-1.5">
+        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> 一鍵下載 Excel[cite: 1]
       </button>
-      <button onclick="closeProcurementModal()" class="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"><i data-lucide="x" class="w-6 h-6"></i></button>
+      <button onclick="closeProcurementModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-6 h-6"></i></button>
      </div>
     </div>
 
@@ -476,6 +475,7 @@
   </div>
 
   <script>
+    // 🔐 密碼驗證邏輯 (預設密碼: 8888)
     const CORRECT_PASSWORD = "8888";
 
     function handleLogin(e) {
@@ -491,6 +491,7 @@
       }
     }
 
+    // 頁面載入時檢查是否已經解鎖過
     window.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
       if (sessionStorage.getItem('gs_authenticated') === 'true') {
