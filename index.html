@@ -143,15 +143,8 @@
 
   <!-- 實際內容容器 (解鎖前隱藏) -->
   <div id="mainContentWrapper" class="hidden">
-    
-    <!-- 雲端同步狀態列 -->
-    <div id="syncStatusBar" class="bg-amber-900/90 text-amber-200 text-center py-1.5 text-xs font-medium flex items-center justify-center gap-2 border-b border-amber-700/50">
-      <span id="syncStatusDot" class="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
-      <span id="syncStatusText">正在連線至 Google 試算表...</span>
-    </div>
-
     <!-- Header Section -->
-    <header class="w-full px-6 md:px-12 pt-6 pb-4">
+    <header class="w-full px-6 md:px-12 pt-8 pb-4">
      <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
        <h1 class="gold-title text-3xl md:text-5xl font-extrabold text-[#fde047] drop-shadow-md tracking-wide">GOLD SHOP</h1>
@@ -222,7 +215,7 @@
      <main class="lg:col-span-8">
       <div class="main-card p-6 md:p-8 rounded-2xl shadow-xl min-h-[500px] space-y-6">
        
-       <!-- 注意事項與高風險黑點 -->
+       <!-- 注意事項與高風險黑點 (已移至日期進度監視上方，並完美匹配組件寬度) -->
        <div class="bg-white/80 p-4 rounded-xl shadow-sm border border-red-300/60 flex items-center justify-between">
         <div class="flex items-center gap-3">
          <div class="p-2.5 bg-red-600/20 text-red-900 rounded-xl"><i data-lucide="alert-triangle" class="w-5 h-5"></i></div>
@@ -393,7 +386,7 @@
      </div>
      <div class="flex items-center gap-2">
       <button onclick="exportProcurementToExcel()" class="px-3.5 py-2 bg-emerald-700 text-white rounded-xl text-xs font-bold hover:bg-emerald-800 transition-colors shadow flex items-center gap-1.5">
-        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> 一鍵下載 Excel
+        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> 一鍵下載 Excel[cite: 1]
       </button>
       <button onclick="closeProcurementModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-6 h-6"></i></button>
      </div>
@@ -403,7 +396,7 @@
     <div class="mt-4 bg-amber-50 p-4 rounded-xl border border-amber-200 flex justify-between items-center mb-3">
      <div>
       <span id="currentFilterLabel" class="text-xs text-amber-800 font-bold block mb-0.5">全部總計 (HKD)</span> 
-      <span id="totalExpenseDisplay" class="text-3xl font-extrabold text-amber-900">HK$ 0.00</span>
+      <span id="totalExpenseDisplay" class="text-3xl font-extrabold text-amber-900">HK$ 0</span>
      </div>
     </div>
 
@@ -438,7 +431,7 @@
      </div>
      <div class="sm:col-span-2">
       <label class="block text-[11px] font-bold text-slate-700 mb-1">單價 (HKD)</label> 
-      <input type="number" min="0" step="0.01" id="pPrice" required class="w-full px-3 py-1.5 border rounded-lg text-xs" placeholder="0.00">
+      <input type="number" min="0" step="0.1" id="pPrice" required class="w-full px-3 py-1.5 border rounded-lg text-xs" placeholder="0.00">
      </div>
      <div class="sm:col-span-1">
       <label class="block text-[11px] font-bold text-slate-700 mb-1">數量</label> 
@@ -482,19 +475,8 @@
   </div>
 
   <script>
-    // 🔗 Google Apps Script 網頁應用程式網址
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzsxEfczDe9FA9g5PqkXNmzjF0DbJm5bu8MPlJz7cgaXk7LZG7kSJhT4ItJOWD83p8E/exec";
-
     // 🔐 密碼驗證邏輯 (預設密碼: 8888)
     const CORRECT_PASSWORD = "8888";
-
-    // 金額格式化輔助函數（統一格式化為千分位 + 兩位小數）
-    function formatCurrency(val) {
-      return Number(val || 0).toLocaleString('zh-HK', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
-    }
 
     function handleLogin(e) {
       e.preventDefault();
@@ -509,6 +491,7 @@
       }
     }
 
+    // 頁面載入時檢查是否已經解鎖過
     window.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
       if (sessionStorage.getItem('gs_authenticated') === 'true') {
@@ -525,9 +508,12 @@
     let currentCategory = 'Morning';
     let pFilter = 'All';
 
-    let targetOpeningDate = localStorage.getItem('gs_target_date') || '2026-10-15';
+    let targetOpeningDate = localStorage.getItem('gs_target_date');
+    if (!targetOpeningDate) {
+      targetOpeningDate = '2026-10-15';
+      localStorage.setItem('gs_target_date', targetOpeningDate);
+    }
 
-    // 預設資料
     let tasks = JSON.parse(localStorage.getItem('gs_tasks_lp_v2') || '[]');
     if (tasks.length === 0) {
       tasks = [
@@ -544,6 +530,7 @@
         { id: '11', name: '改出路燈、貓燈、（消防灑水）（消防承辦商）', category: 'Noon', startDate: '2026-09-07', endDate: '2026-10-15', completed: false },
         { id: '12', name: '其他', category: 'Noon', startDate: '2026-09-07', endDate: '2026-10-15', completed: false }
       ];
+      saveTasks();
     }
 
     const defaultNotices = [
@@ -562,88 +549,17 @@
       { id: 'n13', category: 'risk', text: '未交齊相關證書（FS251/WR1）即擅自拆除圍板開業。' }
     ];
 
-    let notices = JSON.parse(localStorage.getItem('gs_notices_lp') || 'null') || [...defaultNotices];
+    let notices = JSON.parse(localStorage.getItem('gs_notices_lp') || 'null');
+    if (!notices) {
+      notices = [...defaultNotices];
+      saveNotices();
+    }
+
     let purchases = JSON.parse(localStorage.getItem('gs_purchases') || '[]');
 
-    // ================= ☁️ API 雲端同步邏輯 =================
-    function updateSyncStatus(status, text) {
-      const dot = document.getElementById('syncStatusDot');
-      const label = document.getElementById('syncStatusText');
-      if (!dot || !label) return;
-      
-      label.innerText = text;
-      if (status === 'syncing') {
-        dot.className = "w-2 h-2 rounded-full bg-amber-400 inline-block animate-pulse";
-      } else if (status === 'success') {
-        dot.className = "w-2 h-2 rounded-full bg-emerald-400 inline-block";
-      } else {
-        dot.className = "w-2 h-2 rounded-full bg-red-400 inline-block";
-      }
-    }
-
-    // 從 Google 試算表讀取資料 (GET)
-    async function fetchFromCloud() {
-      updateSyncStatus('syncing', '正在從 Google 試算表同步資料...');
-      try {
-        const response = await fetch(APPS_SCRIPT_URL);
-        if (!response.ok) throw new Error('網路回應錯誤');
-        const data = await response.json();
-        
-        if (data && data.success) {
-          if (data.tasks && data.tasks.length > 0) tasks = data.tasks;
-          if (data.purchases) purchases = data.purchases;
-          if (data.targetOpeningDate) {
-            targetOpeningDate = data.targetOpeningDate;
-            localStorage.setItem('gs_target_date', targetOpeningDate);
-          }
-          saveLocal();
-          renderTasks();
-          renderProcurementTable();
-          updateCountdown();
-          updateSyncStatus('success', '已成功與 Google 試算表同步');
-        } else {
-          throw new Error(data.message || '格式錯誤');
-        }
-      } catch (err) {
-        console.warn('雲端讀取失敗，改用本地資料:', err);
-        updateSyncStatus('error', '雲端連線失敗，目前使用本地快取資料');
-      }
-    }
-
-    // 將資料寫入 Google 試算表 (POST)
-    async function saveToCloud() {
-      updateSyncStatus('syncing', '正在儲存至 Google 試算表...');
-      const payload = {
-        tasks: tasks,
-        purchases: purchases,
-        targetOpeningDate: targetOpeningDate,
-        notices: notices
-      };
-
-      try {
-        await fetch(APPS_SCRIPT_URL, {
-          method: 'POST',
-          mode: 'no-cors', 
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(payload)
-        });
-        updateSyncStatus('success', '已成功同步至 Google 試算表');
-      } catch (err) {
-        console.error('寫入雲端失敗:', err);
-        updateSyncStatus('error', '同步至 Google 試算表失敗（已存於本地）');
-      }
-    }
-
-    function saveLocal() { 
-      localStorage.setItem('gs_tasks_lp_v2', JSON.stringify(tasks)); 
-      localStorage.setItem('gs_notices_lp', JSON.stringify(notices)); 
-      localStorage.setItem('gs_purchases', JSON.stringify(purchases));
-    }
-
-    function persistData() {
-      saveLocal();
-      saveToCloud();
-    }
+    function saveTasks() { localStorage.setItem('gs_tasks_lp_v2', JSON.stringify(tasks)); }
+    function saveNotices() { localStorage.setItem('gs_notices_lp', JSON.stringify(notices)); }
+    function savePurchases() { localStorage.setItem('gs_purchases', JSON.stringify(purchases)); }
 
     function initApp() {
       renderCalendar();
@@ -652,8 +568,6 @@
       renderProcurementTable();
       setInterval(updateCountdown, 60000);
       lucide.createIcons();
-      
-      fetchFromCloud();
     }
 
     function moveTask(taskId, direction) {
@@ -675,7 +589,7 @@
         tasks[idx] = tasks[swapWithIdx];
         tasks[swapWithIdx] = temp;
 
-        persistData();
+        saveTasks();
         renderTasks();
       }
     }
@@ -753,7 +667,6 @@
 
       ['Morning', 'Noon'].forEach(cat => {
         const container = document.getElementById(`list-${cat}`);
-        if(!container) return;
         container.innerHTML = '';
 
         const catTasks = activeTasks.filter(t => t.category === cat);
@@ -778,7 +691,7 @@
             checkbox.checked = task.completed;
             checkbox.onchange = () => {
               task.completed = checkbox.checked;
-              persistData();
+              saveTasks();
               renderTasks();
             };
 
@@ -827,7 +740,7 @@
               e.stopPropagation();
               showDeleteConfirm(`確認刪除「${task.name}」？`, () => {
                 tasks = tasks.filter(t => t.id !== task.id);
-                persistData();
+                saveTasks();
                 renderTasks();
               });
             };
@@ -850,23 +763,18 @@
       currentCategory = cat;
       ['Morning', 'Noon'].forEach(c => {
         const btn = document.getElementById(`catBtn-${c}`);
-        if (btn) {
-          if (c === cat) btn.classList.add('active');
-          else btn.classList.remove('active');
-        }
+        if (c === cat) btn.classList.add('active');
+        else btn.classList.remove('active');
       });
     }
 
     function openModal() {
       document.getElementById('editTaskId').value = '';
       document.getElementById('taskName').value = '';
-      // 帶入日曆選定的日期
       document.getElementById('startDate').value = selectedDateStr;
       document.getElementById('endDate').value = selectedDateStr;
       document.getElementById('charCounter').innerText = '0/100';
       document.getElementById('taskModalTitle').innerText = '新增工程任務';
-      
-      // 選擇預設分類 Morning
       selectCategory('Morning');
       document.getElementById('taskModal').classList.remove('hidden');
     }
@@ -878,7 +786,7 @@
       document.getElementById('endDate').value = task.endDate || selectedDateStr;
       document.getElementById('charCounter').innerText = `${task.name.length}/100`;
       document.getElementById('taskModalTitle').innerText = '修改任務內容與日期';
-      selectCategory(task.category || 'Morning');
+      selectCategory(task.category);
       document.getElementById('taskModal').classList.remove('hidden');
     }
 
@@ -903,17 +811,10 @@
           task.endDate = endDate;
         }
       } else {
-        tasks.push({ 
-          id: Date.now().toString(), 
-          name, 
-          category: currentCategory, 
-          startDate, 
-          endDate, 
-          completed: false 
-        });
+        tasks.push({ id: Date.now().toString(), name, category: currentCategory, startDate, endDate, completed: false });
       }
 
-      persistData();
+      saveTasks();
       closeModal();
       renderTasks();
     }
@@ -924,7 +825,6 @@
     function renderNotices() {
       ['demolition', 'restore', 'risk'].forEach(cat => {
         const ul = document.getElementById(`noticeList-${cat}`);
-        if(!ul) return;
         ul.innerHTML = '';
         const catItems = notices.filter(n => n.category === cat);
         
@@ -958,7 +858,7 @@
           delBtn.onclick = () => {
             showDeleteConfirm('確認刪除此注意事項條款？', () => {
               notices = notices.filter(n => n.id !== item.id);
-              persistData();
+              saveNotices();
               renderNotices();
             });
           };
@@ -981,7 +881,7 @@
       if (!text) return;
       notices.push({ id: 'n_' + Date.now(), category: cat, text: text });
 
-      persistData();
+      saveNotices();
       document.getElementById('noticeTextInput').value = '';
       renderNotices();
     }
@@ -993,7 +893,7 @@
       const newText = prompt('請修改注意事項內容：', item.text);
       if (newText !== null && newText.trim() !== '') {
         item.text = newText.trim();
-        persistData();
+        saveNotices();
         renderNotices();
       }
     }
@@ -1001,7 +901,7 @@
     function resetNoticeDefaults() {
       showDeleteConfirm('確認將所有注意事項回復為預設範本？', () => {
         notices = [...defaultNotices];
-        persistData();
+        saveNotices();
         renderNotices();
       });
     }
@@ -1033,7 +933,6 @@
       if (val) {
         targetOpeningDate = val;
         localStorage.setItem('gs_target_date', targetOpeningDate);
-        persistData();
         updateCountdown();
       }
       closeCountdownModal();
@@ -1063,7 +962,7 @@
       let catTotals = { '裝修費用': 0, '電器': 0, '文具': 0, '雜物': 0, '雜費': 0, '其他': 0 };
 
       purchases.forEach(item => {
-        const itemTotal = (parseFloat(item.price) || 0) * (parseInt(item.qty) || 1);
+        const itemTotal = item.price * item.qty;
         grandTotal += itemTotal;
         
         if (catTotals[item.category] !== undefined) {
@@ -1073,7 +972,7 @@
         }
       });
 
-      document.getElementById('totalPurchaseBrief').innerText = `已登錄 ${purchases.length} 項採購，總計 HK$ ${formatCurrency(grandTotal)}`;
+      document.getElementById('totalPurchaseBrief').innerText = `已登錄 ${purchases.length} 項採購，總計 HK$ ${grandTotal.toLocaleString()}`;
 
       const categories = ['All', '裝修費用', '電器', '文具', '雜物', '雜費', '其他'];
       categories.forEach(c => {
@@ -1081,12 +980,12 @@
         if(!btn) return;
         
         const amt = c === 'All' ? grandTotal : (catTotals[c] || 0);
-        btn.innerText = `${c === 'All' ? '全部' : c} ($${formatCurrency(amt)})`;
+        btn.innerText = `${c === 'All' ? '全部' : c} ($${amt.toLocaleString()})`;
 
         if(pFilter === c) {
           btn.className = "whitespace-nowrap px-4 py-2 rounded-xl border-2 border-amber-800 bg-amber-800 text-white text-xs font-bold shadow-sm transition-all";
           document.getElementById('currentFilterLabel').innerText = `${c === 'All' ? '全部' : c}總計 (HKD)`;
-          document.getElementById('totalExpenseDisplay').innerText = `HK$ ${formatCurrency(amt)}`;
+          document.getElementById('totalExpenseDisplay').innerText = `HK$ ${amt.toLocaleString()}`;
         } else {
           btn.className = "whitespace-nowrap px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-bold hover:bg-slate-50 transition-all";
         }
@@ -1095,18 +994,15 @@
       const displayItems = pFilter === 'All' ? purchases : purchases.filter(p => p.category === pFilter);
 
       displayItems.forEach(item => {
-        const priceNum = parseFloat(item.price) || 0;
-        const qtyNum = parseInt(item.qty) || 1;
-        const itemTotal = priceNum * qtyNum;
-
+        const itemTotal = item.price * item.qty;
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 border-b border-slate-100 transition-colors';
         tr.innerHTML = `
           <td class="p-3 font-semibold text-slate-700">${item.category}</td>
           <td class="p-3 font-medium text-slate-900">${item.name}</td>
-          <td class="p-3 text-right text-slate-600">$${formatCurrency(priceNum)}</td>
-          <td class="p-3 text-center text-slate-600">${qtyNum}</td>
-          <td class="p-3 text-right font-bold text-amber-900">$${formatCurrency(itemTotal)}</td>
+          <td class="p-3 text-right text-slate-600">$${Number(item.price).toLocaleString()}</td>
+          <td class="p-3 text-center text-slate-600">${item.qty}</td>
+          <td class="p-3 text-right font-bold text-amber-900">$${itemTotal.toLocaleString()}</td>
           <td class="p-3 text-slate-500 max-w-[150px] truncate" title="${item.note || ''}">${item.note || '-'}</td>
           <td class="p-3 text-center">
             <div class="inline-flex items-center justify-center gap-1">
@@ -1125,6 +1021,7 @@
       lucide.createIcons();
     }
 
+    // 一鍵下載採購清單 Excel (CSV 格式)
     function exportProcurementToExcel() {
       if (!purchases || purchases.length === 0) {
         alert('目前沒有採購項目可以下載！');
@@ -1134,14 +1031,12 @@
       let csvContent = "\ufeff類別,物品名稱,單價(HKD),數量,總價(HKD),說明/備註\n";
 
       purchases.forEach(item => {
-        const priceNum = parseFloat(item.price) || 0;
-        const qtyNum = parseInt(item.qty) || 1;
-        const total = priceNum * qtyNum;
+        const total = item.price * item.qty;
         const name = `"${(item.name || '').replace(/"/g, '""')}"`;
         const category = `"${(item.category || '').replace(/"/g, '""')}"`;
         const note = `"${(item.note || '').replace(/"/g, '""')}"`;
 
-        csvContent += `${category},${name},${priceNum.toFixed(2)},${qtyNum},${total.toFixed(2)},${note}\n`;
+        csvContent += `${category},${name},${item.price},${item.qty},${total},${note}\n`;
       });
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -1164,7 +1059,7 @@
       document.getElementById('pEditId').value = item.id;
       document.getElementById('pName').value = item.name;
       document.getElementById('pCategory').value = item.category;
-      document.getElementById('pPrice').value = parseFloat(item.price) || '';
+      document.getElementById('pPrice').value = item.price;
       document.getElementById('pQty').value = item.qty;
       document.getElementById('pNote').value = item.note || '';
 
@@ -1216,7 +1111,7 @@
         });
       }
 
-      persistData();
+      savePurchases();
       resetPurchaseForm();
       renderProcurementTable();
     }
@@ -1225,7 +1120,7 @@
       const item = purchases.find(p => p.id === id);
       showDeleteConfirm(`確認刪除採購項目「${item ? item.name : ''}」？`, () => {
         purchases = purchases.filter(p => p.id !== id);
-        persistData();
+        savePurchases();
         renderProcurementTable();
       });
     }
